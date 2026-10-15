@@ -1,0 +1,514 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IT service desk ticket management dashboard">
+  <title>Service Desk Toolkit</title>
+
+  <style>
+    :root {
+      --background: #f4f7fb;
+      --surface: #ffffff;
+      --primary: #2457d6;
+      --text: #172033;
+      --muted: #68758a;
+      --border: #e0e6ef;
+      --danger: #c62828;
+      --warning: #a15c00;
+      --success: #16794b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--background);
+      color: var(--text);
+    }
+
+    header {
+      background: #172b4d;
+      color: white;
+      padding: 22px 6%;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 25px;
+    }
+
+    header p {
+      margin: 0;
+      color: #c8d5eb;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    button, input, select {
+      font: inherit;
+      border-radius: 7px;
+      padding: 11px 13px;
+    }
+
+    input, select {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+    }
+
+    button {
+      border: 0;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      filter: brightness(.92);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card, .ticket-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 3px 12px #172b4d08;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stat-value {
+      font-size: 30px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .ticket-panel h2 {
+      margin-top: 0;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .filters input {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .high {
+      background: #ffebee;
+      color: var(--danger);
+    }
+
+    .medium {
+      background: #fff3df;
+      color: var(--warning);
+    }
+
+    .low {
+      background: #e6f5ed;
+      color: var(--success);
+    }
+
+    .status {
+      color: #354765;
+      background: #edf1f7;
+    }
+
+    .ticket-link {
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    dialog {
+      width: min(460px, calc(100% - 30px));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    dialog::backdrop {
+      background: #10182888;
+    }
+
+    dialog form {
+      display: grid;
+      gap: 13px;
+    }
+
+    dialog label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .cancel {
+      background: #e8edf5;
+      color: var(--text);
+    }
+
+    footer {
+      padding: 25px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      main {
+        padding: 0 12px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Service Desk Toolkit</h1>
+    <p>IT Operations | Incident Management Dashboard</p>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div>
+        <h2>Support Overview</h2>
+        <p>Monitor and manage IT support requests.</p>
+      </div>
+      <button id="newTicketButton">+ New ticket</button>
+    </section>
+
+    <section class="stats" aria-label="Ticket statistics">
+      <article class="card">
+        <div class="stat-label">Total tickets</div>
+        <div class="stat-value" id="totalCount">0</div>
+      </article>
+      <article class="card">
+        <div class="stat-label">Open</div>
+        <div class="stat-value" id="openCount">0</div>
+      </article>
+      <article class="card">
+        <div class="stat-label">In progress</div>
+        <div class="stat-value" id="progressCount">0</div>
+      </article>
+      <article class="card">
+        <div class="stat-label">Resolved</div>
+        <div class="stat-value" id="resolvedCount">0</div>
+      </article>
+    </section>
+
+    <section class="ticket-panel">
+      <h2>Support tickets</h2>
+
+      <div class="filters">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Search tickets, users or issues..."
+          aria-label="Search tickets"
+        >
+
+        <select id="priorityFilter" aria-label="Filter by priority">
+          <option value="All">All priorities</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="All">All statuses</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Pending">Pending</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Requester</th>
+              <th>Issue</th>
+              <th>Priority</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="ticketTable"></tbody>
+        </table>
+      </div>
+      <div id="emptyMessage" class="empty" hidden>
+        No matching tickets found.
+      </div>
+    </section>
+  </main>
+
+  <dialog id="ticketDialog">
+    <form id="ticketForm">
+      <h2>Create support ticket</h2>
+
+      <label>
+        Requester
+        <input id="requester" maxlength="80" required>
+      </label>
+
+      <label>
+        Issue summary
+        <input id="issue" maxlength="160" required>
+      </label>
+
+      <label>
+        Priority
+        <select id="priority">
+          <option>Low</option>
+          <option selected>Medium</option>
+          <option>High</option>
+        </select>
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="cancel" id="cancelButton">
+          Cancel
+        </button>
+        <button type="submit">Create ticket</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>
+    Service Desk Toolkit · Portfolio project by Mwirigi Koome
+  </footer>
+
+  <script>
+    const tickets = [
+      {
+        id: 1001,
+        requester: "Alex Morgan",
+        issue: "VPN connection failure",
+        priority: "High",
+        status: "Open"
+      },
+      {
+        id: 1002,
+        requester: "Jamie Patel",
+        issue: "Email access problem",
+        priority: "Medium",
+        status: "In Progress"
+      },
+      {
+        id: 1003,
+        requester: "Taylor Reed",
+        issue: "Printer not responding",
+        priority: "Low",
+        status: "Resolved"
+      },
+      {
+        id: 1004,
+        requester: "Sam Carter",
+        issue: "Account locked",
+        priority: "High",
+        status: "Pending"
+      },
+      {
+        id: 1005,
+        requester: "Jordan Lee",
+        issue: "Slow workstation",
+        priority: "Medium",
+        status: "Open"
+      }
+    ];
+
+    const table = document.getElementById("ticketTable");
+    const searchInput = document.getElementById("searchInput");
+    const priorityFilter = document.getElementById("priorityFilter");
+    const statusFilter = document.getElementById("statusFilter");
+    const dialog = document.getElementById("ticketDialog");
+
+    function updateStatistics() {
+      document.getElementById("totalCount").textContent = tickets.length;
+      document.getElementById("openCount").textContent =
+        tickets.filter(t => t.status === "Open").length;
+      document.getElementById("progressCount").textContent =
+        tickets.filter(t => t.status === "In Progress").length;
+      document.getElementById("resolvedCount").textContent =
+        tickets.filter(t => t.status === "Resolved").length;
+    }
+
+    function renderTickets() {
+      const search = searchInput.value.trim().toLowerCase();
+      const priority = priorityFilter.value;
+      const status = statusFilter.value;
+
+      const filtered = tickets.filter(ticket => {
+        const matchesSearch =
+          `${ticket.id} ${ticket.requester} ${ticket.issue}`
+            .toLowerCase().includes(search);
+
+        return matchesSearch &&
+          (priority === "All" || ticket.priority === priority) &&
+          (status === "All" || ticket.status === status);
+      });
+
+      table.replaceChildren();
+
+      filtered.forEach(ticket => {
+        const row = document.createElement("tr");
+
+        const values = [
+          `SD-${ticket.id}`,
+          ticket.requester,
+          ticket.issue,
+          ticket.priority,
+          ticket.status
+        ];
+
+        values.forEach((value, index) => {
+          const cell = document.createElement("td");
+
+          if (index === 3 || index === 4) {
+            const badge = document.createElement("span");
+            badge.className = "badge " +
+              (index === 3
+                ? ticket.priority.toLowerCase()
+                : "status");
+            badge.textContent = value;
+            cell.appendChild(badge);
+          } else {
+            cell.textContent = value;
+          }
+
+          row.appendChild(cell);
+        });
+
+        table.appendChild(row);
+      });
+
+      document.getElementById("emptyMessage").hidden =
+        filtered.length !== 0;
+    }
+
+    searchInput.addEventListener("input", renderTickets);
+    priorityFilter.addEventListener("change", renderTickets);
+    statusFilter.addEventListener("change", renderTickets);
+
+    document.getElementById("newTicketButton")
+      .addEventListener("click", () => dialog.showModal());
+
+    document.getElementById("cancelButton")
+      .addEventListener("click", () => dialog.close());
+
+    document.getElementById("ticketForm")
+      .addEventListener("submit", event => {
+        event.preventDefault();
+
+        tickets.unshift({
+          id: tickets.length
+            ? Math.max(...tickets.map(t => t.id)) + 1
+            : 1001,
+          requester: document.getElementById("requester").value.trim(),
+          issue: document.getElementById("issue").value.trim(),
+          priority: document.getElementById("priority").value,
+          status: "Open"
+        });
+
+        event.target.reset();
+        dialog.close();
+        updateStatistics();
+        renderTickets();
+      });
+
+    updateStatistics();
+    renderTickets();
+  </script>
+</body>
+</html>
+```
